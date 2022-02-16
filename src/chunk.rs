@@ -65,18 +65,25 @@ impl TryFrom<&[u8]> for Chunk {
         let data = Vec::from(&value[data_offsets.0 .. data_offsets.1]);
         let crc = u32::from_be_bytes((&value[crc_offsets.0 .. crc_offsets.1]).try_into().unwrap());
 
-        Ok(Chunk {
+        let chunk = Chunk {
             data_length,
             chunk_type,
             data,
             crc,
-        })
+        };
+
+        if chunk.crc() != crc {
+            return Err("CRC mismatch".to_owned());
+        }
+
+        Ok(chunk)
     }
 }
 
 impl Display for Chunk {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "UNIMPLEMENTED")
+        write!(f, "len: {}  type: {}  crc: {}  data: {}",
+               self.data_length, self.chunk_type, self.crc, String::try_from(&self.data).expect("<non-msg data>"))
     }
 }
 
