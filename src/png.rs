@@ -1,33 +1,67 @@
-struct Png {
+use std::fmt::{Display, Formatter};
 
+use crate::chunk::Chunk;
+
+struct Png {
+    header: [u8; 8],
+    my_chunks: Vec<Chunk>,
 }
 
 impl Png {
+    pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
+
     fn from_chunks(chunks: Vec<Chunk>) -> Png {
-        todo!()
+        Png {
+            header: Png::STANDARD_HEADER,
+            my_chunks: chunks
+        }
     }
 
     fn append_chunk(&mut self, chunk: Chunk) {
-        todo!()
+        self.my_chunks.push(chunk)
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
-        todo!()
+    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ()> {
+        for (i, c) in self.my_chunks.iter().enumerate() {
+            if c.chunk_type().to_string() == chunk_type {
+                return Ok(self.my_chunks.remove(i));
+            }
+        }
+        Err(())
     }
 
     fn header(&self) -> &[u8; 8] {
-        todo!()
+        &self.header
     }
 
     fn chunks(&self) -> &[Chunk] {
-        todo!()
+        self.my_chunks.as_slice()
     }
 
     fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        todo!()
+        self.my_chunks.iter().find(|&c| c.chunk_type().to_string() == chunk_type)
     }
 
     fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes: Vec<u8> = self.header.to_vec();
+
+        self.my_chunks.iter().for_each(|c| bytes.append(&mut c.as_bytes().clone()));
+
+        bytes
+
+    }
+}
+
+impl TryFrom<&[u8]> for Png {
+    type Error = ();
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        todo!()
+    }
+}
+
+impl Display for Png {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         todo!()
     }
 }
@@ -57,7 +91,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, ()> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type)?;

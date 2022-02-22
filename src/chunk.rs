@@ -13,31 +13,43 @@ pub struct Chunk {
 
 impl Chunk {
 
-    fn length(&self) -> u32 {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+        let mut no_crc_chunk = Chunk {
+            data_length: data.len() as u32,
+            chunk_type,
+            data,
+            crc: 0,
+        };
+
+        no_crc_chunk.crc = no_crc_chunk.crc();
+        no_crc_chunk
+    }
+
+    pub fn length(&self) -> u32 {
         self.data_length
     }
 
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
 
-    fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         let r: &[u8] = &self.data;
         r
     }
 
-    fn crc(&self) -> u32 {
+    pub fn crc(&self) -> u32 {
         let chk = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
         let mut dh: Vec<u8> = self.chunk_type.bytes().to_vec();
         dh.append(&mut self.data.clone()); //todo: doable without clone?
         chk.checksum(dh.by_ref())
     }
 
-    fn data_as_string(&self) -> Result<String, FromUtf8Error> {
+    pub fn data_as_string(&self) -> Result<String, FromUtf8Error> {
         String::from_utf8(self.data.clone())
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         todo!()
     }
 }
@@ -83,7 +95,7 @@ impl TryFrom<&[u8]> for Chunk {
 impl Display for Chunk {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "len: {}  type: {}  crc: {}  data: {}",
-               self.data_length, self.chunk_type, self.crc, String::try_from(&self.data).expect("<non-msg data>"))
+               self.data_length, self.chunk_type, self.crc, self.data_as_string().expect("<non-msg data>"))
     }
 }
 
