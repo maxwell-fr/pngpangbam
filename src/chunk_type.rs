@@ -59,6 +59,21 @@ impl FromStr for ChunkType {
     }
 }
 
+impl PartialEq<str> for ChunkType {
+    fn eq(&self, other: &str) -> bool {
+        let other_bytes = other.as_bytes();
+        other_bytes.len() == 4 &&
+            self.type_code[0] == other_bytes[0] &&
+            self.type_code[1] == other_bytes[1] &&
+            self.type_code[2] == other_bytes[2] &&
+            self.type_code[3] == other_bytes[3]
+    }
+
+    fn ne(&self, other: &str) -> bool {
+        !(self == other)
+    }
+}
+
 impl Display for ChunkType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let s = self.type_code;

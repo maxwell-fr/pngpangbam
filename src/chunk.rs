@@ -64,14 +64,14 @@ impl TryFrom<&[u8]> for Chunk {
         }
         let data_length: u32 = u32::from_be_bytes((&value[0..4]).try_into().unwrap());
 
-        if data_length != value.len() as u32 - 12 {
-            return Err(format!("value length mismatch {} {}", value.len(), data_length));
+        if data_length > value.len() as u32 - 12 {
+            return Err(format!("length specified is too long for provided bytes: {} > {}", data_length, value.len()));
         }
 
         type Offsets = (usize, usize);
         let type_offsets: Offsets = (4, 8);
         let data_offsets: Offsets = (8, data_length as usize + 8);
-        let crc_offsets: Offsets = (data_offsets.1, value.len());
+        let crc_offsets: Offsets = (data_offsets.1, data_offsets.1 + 4);
 
         let chunk_type = ChunkType::try_from(<[u8; 4]>::try_from(&value[type_offsets.0 .. type_offsets.1]).unwrap()).unwrap();
         let data = Vec::from(&value[data_offsets.0 .. data_offsets.1]);

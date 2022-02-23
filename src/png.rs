@@ -48,7 +48,6 @@ impl Png {
         self.my_chunks.iter().for_each(|c| bytes.append(&mut c.as_bytes().clone()));
 
         bytes
-
     }
 }
 
@@ -56,7 +55,37 @@ impl TryFrom<&[u8]> for Png {
     type Error = ();
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-        todo!()
+        if value[0..8].iter()
+            .zip(Png::STANDARD_HEADER)
+            .map(|(a, b)| a.cmp(&b))
+            .find(|&o| o != std::cmp::Ordering::Equal)
+            != None  {
+            return Err(());
+        }
+
+        let mut new_png = Png {
+            header: Png::STANDARD_HEADER,
+            my_chunks: Vec::<Chunk>::new()
+        };
+
+        let mut idx: usize = 8;
+        let mut saw_ihdr = false;
+        let mut saw_iend = false;
+        let mut saw_idat = false;
+        while let Ok(t_chunk) = Chunk::try_from(&value[idx..]) {
+            idx += t_chunk.length() as usize + 12;
+            saw_ihdr = !saw_ihdr && t_chunk.chunk_type() == "IHDR";
+            saw_iend = !saw_iend && t_chunk.chunk_type() == "IEND";
+            saw_idat = !saw_idat && t_chunk.chunk_type() == "IDAT";
+            new_png.append_chunk(t_chunk);
+        };
+
+        if saw_ihdr && saw_idat && saw_iend {
+            Ok(new_png)
+        }
+        else {
+            Err(())
+        }
     }
 }
 
