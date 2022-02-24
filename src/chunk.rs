@@ -50,7 +50,12 @@ impl Chunk {
     }
 
     pub fn as_bytes(&self) -> Vec<u8> {
-        todo!()
+        let mut byt: Vec<u8> = self.data_length.to_be_bytes().to_vec();
+        byt.append(&mut self.chunk_type.bytes().to_vec());
+        byt.append(&mut self.data.clone());
+        byt.append(&mut self.crc.to_be_bytes().to_vec());
+
+        byt
     }
 }
 

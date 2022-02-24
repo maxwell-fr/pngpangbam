@@ -52,7 +52,7 @@ impl Png {
 }
 
 impl TryFrom<&[u8]> for Png {
-    type Error = ();
+    type Error = String;
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         if value[0..8].iter()
@@ -60,7 +60,7 @@ impl TryFrom<&[u8]> for Png {
             .map(|(a, b)| a.cmp(&b))
             .find(|&o| o != std::cmp::Ordering::Equal)
             != None  {
-            return Err(());
+            return Err("Header mismatch".to_string());
         }
 
         let mut new_png = Png {
@@ -74,24 +74,24 @@ impl TryFrom<&[u8]> for Png {
         let mut saw_idat = false;
         while let Ok(t_chunk) = Chunk::try_from(&value[idx..]) {
             idx += t_chunk.length() as usize + 12;
-            saw_ihdr = !saw_ihdr && t_chunk.chunk_type() == "IHDR";
-            saw_iend = !saw_iend && t_chunk.chunk_type() == "IEND";
-            saw_idat = !saw_idat && t_chunk.chunk_type() == "IDAT";
+            saw_ihdr = saw_ihdr || t_chunk.chunk_type() == "IHDR";
+            saw_iend = saw_iend || t_chunk.chunk_type() == "IEND";
+            saw_idat = saw_idat || t_chunk.chunk_type() == "IDAT";
             new_png.append_chunk(t_chunk);
         };
 
-        if saw_ihdr && saw_idat && saw_iend {
-            Ok(new_png)
-        }
-        else {
-            Err(())
-        }
+        // if saw_ihdr && saw_idat && saw_iend {
+             Ok(new_png)
+        // }
+        // else {
+        //     Err("Missing required chunk types".to_string())
+        // }
     }
 }
 
 impl Display for Png {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        write!(f, "chunks: {}",  self.my_chunks.len())
     }
 }
 
