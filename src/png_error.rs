@@ -18,7 +18,7 @@ impl std::fmt::Display for PngError {
             PngError::MissingRequiredChunks => write!(f, "Missing required chunks."),
             PngError::ChunkNotFound => write!(f, "Chunk not found."),
             PngError::GenericError => write!(f, "Non-specific generic error."),
-            PngError::IO(e) => write!(f, "IO Error: {}", e)
+            PngError::IO(e) => write!(f, "IO Error: {e}"),
         }
     }
 }
@@ -30,7 +30,7 @@ impl From<std::io::Error> for PngError {
 }
 
 impl From<()> for PngError {
-    fn from(value: ()) -> Self {
+    fn from(_: ()) -> Self {
         PngError::GenericError
     }
 }

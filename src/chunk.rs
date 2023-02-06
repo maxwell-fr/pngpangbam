@@ -13,10 +13,10 @@ pub struct Chunk {
 
 impl Chunk {
 
-    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+    pub fn new(chunk_type: &ChunkType, data: Vec<u8>) -> Chunk {
         let mut no_crc_chunk = Chunk {
             data_length: data.len() as u32,
-            chunk_type,
+            chunk_type: chunk_type.clone(),
             data,
             crc: 0,
         };

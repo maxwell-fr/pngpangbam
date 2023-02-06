@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ChunkType {
     type_code: [u8; 4],
 }
@@ -102,9 +102,9 @@ impl Eq for ChunkType {}
 
 //picklenerd's tests below
 mod tests {
-    use super::*;
-    use std::convert::TryFrom;
-    use std::str::FromStr;
+    // use super::*;
+    // use std::convert::TryFrom;
+    // use std::str::FromStr;
 
     #[test]
     pub fn test_chunk_type_from_bytes() {

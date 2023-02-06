@@ -1,7 +1,6 @@
 
 mod chunk;
 mod chunk_type;
-mod commands;
 mod png;
 mod cli;
 mod png_error;
@@ -16,6 +15,10 @@ fn main() -> Result<()> {
     let args = Cli::parse();
 
     println!("Hello, world!");
+
+    args.exec().unwrap();
+
+    println!("Post");
 
     Ok(())
 }

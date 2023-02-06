@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter};
-use std::io::ErrorKind;
 use std::path::Path;
 
 use crate::chunk::Chunk;
@@ -22,11 +21,11 @@ impl Png {
         }
     }
 
-    fn append_chunk(&mut self, chunk: Chunk) {
+    pub fn append_chunk(&mut self, chunk: Chunk) {
         self.my_chunks.push(chunk)
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         for (i, c) in self.my_chunks.iter().enumerate() {
             if c.chunk_type().to_string() == chunk_type {
                 return Ok(self.my_chunks.remove(i));
@@ -43,7 +42,7 @@ impl Png {
         self.my_chunks.as_slice()
     }
 
-    fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
+    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
         self.my_chunks.iter().find(|&c| c.chunk_type().to_string() == chunk_type)
     }
 
@@ -55,14 +54,14 @@ impl Png {
         bytes
     }
 
-    fn load(filepath: impl AsRef<Path>) -> Result<Png> {
+    pub fn load(filepath: impl AsRef<Path>) -> Result<Png> {
         let file_bytes = std::fs::read(filepath)?;
 
         Png::try_from(file_bytes.as_slice())
     }
 
-    fn save(png: &Png, filepath: impl AsRef<Path>) -> Result<()> {
-        std::fs::write(filepath, png.as_bytes())?;
+    pub fn save(&self, filepath: impl AsRef<Path>) -> Result<()> {
+        std::fs::write(filepath, self.as_bytes())?;
         Ok(())
     }
 
@@ -143,7 +142,7 @@ mod tests {
         let chunk_type = ChunkType::from_str(chunk_type)?;
         let data: Vec<u8> = data.bytes().collect();
 
-        Ok(Chunk::new(chunk_type, data))
+        Ok(Chunk::new(&chunk_type, data))
     }
 
     #[test]
