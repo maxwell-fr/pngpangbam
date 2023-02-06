@@ -4,11 +4,11 @@ use std::path::PathBuf;
 #[derive(Parser)]
 pub struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: PngCommand,
 }
 
 #[derive(Subcommand, Debug)]
-enum Commands {
+pub enum PngCommand {
     Encode {
         filename: PathBuf,
         chunk_type: String,

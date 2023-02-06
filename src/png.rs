@@ -1,11 +1,16 @@
 use std::fmt::{Display, Formatter};
+use std::io::ErrorKind;
+use std::path::Path;
 
 use crate::chunk::Chunk;
+use crate::png_error::PngError;
 
-struct Png {
+pub struct Png {
     header: [u8; 8],
     my_chunks: Vec<Chunk>,
 }
+
+type Result<T> = std::result::Result<T, PngError>;
 
 impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -21,13 +26,13 @@ impl Png {
         self.my_chunks.push(chunk)
     }
 
-    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk, ()> {
+    fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
         for (i, c) in self.my_chunks.iter().enumerate() {
             if c.chunk_type().to_string() == chunk_type {
                 return Ok(self.my_chunks.remove(i));
             }
         }
-        Err(())
+        Err(PngError::ChunkNotFound)
     }
 
     fn header(&self) -> &[u8; 8] {
@@ -49,18 +54,30 @@ impl Png {
 
         bytes
     }
+
+    fn load(filepath: impl AsRef<Path>) -> Result<Png> {
+        let file_bytes = std::fs::read(filepath)?;
+
+        Png::try_from(file_bytes.as_slice())
+    }
+
+    fn save(png: &Png, filepath: impl AsRef<Path>) -> Result<()> {
+        std::fs::write(filepath, png.as_bytes())?;
+        Ok(())
+    }
+
 }
 
 impl TryFrom<&[u8]> for Png {
-    type Error = String;
+    type Error = PngError;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self> {
         if value[0..8].iter()
             .zip(Png::STANDARD_HEADER)
             .map(|(a, b)| a.cmp(&b))
             .find(|&o| o != std::cmp::Ordering::Equal)
             != None  {
-            return Err("Header mismatch".to_string());
+            return Err(PngError::BadHeader);
         }
 
         let mut new_png = Png {
@@ -81,7 +98,7 @@ impl TryFrom<&[u8]> for Png {
         };
 
         // if saw_ihdr && saw_idat && saw_iend {
-             Ok(new_png)
+             Ok(new_png) //todo: make this check work
         // }
         // else {
         //     Err("Missing required chunk types".to_string())
@@ -120,7 +137,7 @@ mod tests {
         Png::from_chunks(chunks)
     }
 
-    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk, ()> {
+    fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
         use std::str::FromStr;
 
         let chunk_type = ChunkType::from_str(chunk_type)?;
