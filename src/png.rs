@@ -96,12 +96,12 @@ impl TryFrom<&[u8]> for Png {
             new_png.append_chunk(t_chunk);
         };
 
-        // if saw_ihdr && saw_idat && saw_iend {
+        if saw_ihdr && saw_idat && saw_iend {
              Ok(new_png) //todo: make this check work
-        // }
-        // else {
-        //     Err("Missing required chunk types".to_string())
-        // }
+        }
+        else {
+            Err(PngError::MissingRequiredChunks)
+        }
     }
 }
 
@@ -124,9 +124,12 @@ mod tests {
     fn testing_chunks() -> Vec<Chunk> {
         let mut chunks = Vec::new();
 
+        chunks.push(chunk_from_strings("IHDR", "0").unwrap()); //fixme: this IHDR is not valid
+        chunks.push(chunk_from_strings("IDAT", "0").unwrap());
         chunks.push(chunk_from_strings("FrSt", "I am the first chunk").unwrap());
         chunks.push(chunk_from_strings("miDl", "I am another chunk").unwrap());
         chunks.push(chunk_from_strings("LASt", "I am the last chunk").unwrap());
+        chunks.push(chunk_from_strings("IEND", "").unwrap());
 
         chunks
     }
@@ -137,8 +140,6 @@ mod tests {
     }
 
     fn chunk_from_strings(chunk_type: &str, data: &str) -> Result<Chunk> {
-        use std::str::FromStr;
-
         let chunk_type = ChunkType::from_str(chunk_type)?;
         let data: Vec<u8> = data.bytes().collect();
 
@@ -148,9 +149,10 @@ mod tests {
     #[test]
     fn test_from_chunks() {
         let chunks = testing_chunks();
+        let expected = chunks.len();
         let png = Png::from_chunks(chunks);
 
-        assert_eq!(png.chunks().len(), 3);
+        assert_eq!(png.chunks().len(), expected);
     }
 
     #[test]
@@ -216,7 +218,8 @@ mod tests {
     fn test_list_chunks() {
         let png = testing_png();
         let chunks = png.chunks();
-        assert_eq!(chunks.len(), 3);
+        let expected = testing_chunks().len();
+        assert_eq!(chunks.len(), expected);
     }
 
     #[test]

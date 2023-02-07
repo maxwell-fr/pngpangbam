@@ -108,8 +108,6 @@ impl Display for Chunk {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
-    use std::str::FromStr;
 
     fn testing_chunk() -> Chunk {
         let data_length: u32 = 42;

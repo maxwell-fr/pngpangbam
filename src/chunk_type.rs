@@ -106,6 +106,9 @@ mod tests {
     // use std::convert::TryFrom;
     // use std::str::FromStr;
 
+    use std::str::FromStr;
+    use crate::chunk_type::ChunkType;
+
     #[test]
     pub fn test_chunk_type_from_bytes() {
         let expected = [82, 117, 83, 116];
