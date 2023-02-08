@@ -1,18 +1,14 @@
 
-mod chunk;
-mod png;
-mod cli;
 
-use clap::Parser;
-use crate::cli::{Cli, CliSuccess};
-use crate::png::PngError;
+use pngpanglib::cli::{Cli, CliSuccess};
+use pngpanglib::png::PngError;
 
 
 pub type Error = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Error>;
 
 fn main() -> Result<()> {
-    let args = Cli::parse();
+    let args = Cli::init();
 
 
     match args.exec() {

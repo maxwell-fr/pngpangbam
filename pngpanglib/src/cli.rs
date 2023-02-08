@@ -51,6 +51,9 @@ impl From<()> for CliSuccess {
 
 
 impl Cli {
+    pub fn init() -> Cli {
+        Cli::parse()
+    }
     pub fn exec(&self) -> Result<CliSuccess, PngError> {
         match &self.command {
             PngCommand::Encode {filename, chunk_type, message, out_filename} => {
