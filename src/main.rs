@@ -1,15 +1,12 @@
-extern crate core;
 
 mod chunk;
-mod chunk_type;
 mod png;
 mod cli;
-mod png_error;
-mod chunk_error;
 
 use clap::Parser;
 use crate::cli::{Cli, CliSuccess};
-use crate::png_error::PngError;
+use crate::png::PngError;
+
 
 pub type Error = Box<dyn std::error::Error>;
 pub type Result<T> = std::result::Result<T, Error>;

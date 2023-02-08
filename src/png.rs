@@ -1,9 +1,12 @@
+pub mod png_error;
+
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 
 use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
-use crate::png_error::PngError;
+use crate::chunk::chunk_type::ChunkType;
+pub use crate::png::png_error::PngError;
+
 
 pub struct Png {
     header: [u8; 8],
@@ -138,7 +141,7 @@ impl Display for Png {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
+    use crate::chunk::ChunkType;
     use crate::chunk::Chunk;
     use std::str::FromStr;
     use std::convert::TryFrom;

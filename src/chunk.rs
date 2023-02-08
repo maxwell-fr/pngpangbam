@@ -1,10 +1,13 @@
+pub mod chunk_type;
+pub mod chunk_error;
+
 use std::fmt::{Display, Formatter};
 use std::io::Write;
 use std::string::FromUtf8Error;
 use crc::Crc;
-use crate::chunk_error::ChunkError;
 
-use crate::chunk_type::ChunkType;
+pub use crate::chunk::chunk_error::ChunkError;
+pub use crate::chunk::chunk_type::ChunkType;
 
 type Result<T> = std::result::Result<T, ChunkError>;
 

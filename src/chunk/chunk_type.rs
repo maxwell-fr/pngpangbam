@@ -103,9 +103,10 @@ impl Eq for ChunkType {}
 
 
 //picklenerd's tests below
+#[cfg(test)]
 mod tests {
     use std::str::FromStr;
-    use crate::chunk_type::ChunkType;
+    use crate::chunk::ChunkType;
 
     #[test]
     pub fn test_chunk_type_from_bytes() {

@@ -1,5 +1,4 @@
 use std::fmt::{Debug, Formatter};
-use std::io::Error;
 
 //type Result<T> = std::result::Result<T, ChunkError>;
 #[derive(Debug)]

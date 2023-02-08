@@ -3,9 +3,8 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::chunk::Chunk;
-use crate::chunk_type::ChunkType;
-use crate::png::Png;
-use crate::png_error::PngError;
+use crate::chunk::ChunkType;
+use crate::png::{Png, PngError};
 
 #[derive(Parser)]
 pub struct Cli {

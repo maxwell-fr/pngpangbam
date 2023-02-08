@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Formatter};
 use std::io::Error;
-use crate::chunk_error::ChunkError;
-use crate::png::Png;
+
+use crate::chunk::ChunkError;
 
 //type Result<T> = std::result::Result<T, PngError>;
 #[derive(Debug)]
