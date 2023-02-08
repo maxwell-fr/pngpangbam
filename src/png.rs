@@ -48,7 +48,7 @@ impl Png {
     //     &self.header
     // }
 
-    fn chunks(&self) -> &[Chunk] {
+    pub fn chunks(&self) -> &[Chunk] {
         self.my_chunks.as_slice()
     }
 
@@ -97,17 +97,25 @@ impl TryFrom<&[u8]> for Png {
         let mut saw_ihdr = false;
         let mut saw_iend = false;
         let mut saw_idat = false;
-        while let Ok(t_chunk) = Chunk::try_from(&value[idx..]) {
-            idx += t_chunk.length() as usize + 12;
-            let ct = &t_chunk.chunk_type().clone();
-            new_png.append_chunk(t_chunk);
+        loop {
+            let maybe_chunk = Chunk::try_from(&value[idx..]);
+            match maybe_chunk {
+                Ok(t_chunk) => {
+                    idx += t_chunk.length() as usize + 12;
+                    let ct = &t_chunk.chunk_type().clone();
+                    new_png.append_chunk(t_chunk);
 
-            if ct == &ChunkType::END_CHUNK {
-                saw_iend = true;
-                break;
+                    if ct == &ChunkType::END_CHUNK {
+                        saw_iend = true;
+                        break;
+                    }
+                    saw_ihdr = saw_ihdr || ct == "IHDR";
+                    saw_idat = saw_idat || ct == "IDAT";
+                }
+                Err(chunk_err) => {
+                    return Err(chunk_err.into());
+                }
             }
-            saw_ihdr = saw_ihdr || ct == "IHDR";
-            saw_idat = saw_idat || ct == "IDAT";
         };
 
         if saw_ihdr && saw_idat && saw_iend {

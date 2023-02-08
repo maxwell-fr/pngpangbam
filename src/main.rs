@@ -5,6 +5,7 @@ mod chunk_type;
 mod png;
 mod cli;
 mod png_error;
+mod chunk_error;
 
 use clap::Parser;
 use crate::cli::{Cli, CliSuccess};
@@ -29,11 +30,14 @@ fn main() -> Result<()> {
                 CliSuccess::SuccessBytes(b) => {
                     println!("Bytes: {b:02X?}");
                 }
+                CliSuccess::SuccessHashMap(h) => {
+                    println!("Chunks: {h:?}");
+                }
             }
             Ok(())
         }
         Err(failure) => {
-            match failure {
+            match &failure {
                 PngError::BadHeader => {
                     println!("Bad header.");
                 }
@@ -49,9 +53,12 @@ fn main() -> Result<()> {
                 PngError::IO(_) => {
                     println!("I/O error reading file.");
                 }
+                PngError::ChunkError(chunk) => {
+                    println!("Chunk error: {chunk}");
+                }
             }
 
-            Err(failure.into())
+            Ok(())
         }
     }
 

@@ -2,8 +2,12 @@ use std::fmt::{Display, Formatter};
 use std::io::Write;
 use std::string::FromUtf8Error;
 use crc::Crc;
+use crate::chunk_error::ChunkError;
 
 use crate::chunk_type::ChunkType;
+
+type Result<T> = std::result::Result<T, ChunkError>;
+
 pub struct Chunk {
     data_length: u32,
     chunk_type: ChunkType,
@@ -45,7 +49,7 @@ impl Chunk {
         chk.checksum(dh.by_ref())
     }
 
-    pub fn as_string(&self) -> Result<String, FromUtf8Error> {
+    pub fn as_string(&self) -> std::result::Result<String, FromUtf8Error> {
         String::from_utf8(self.data.clone())
     }
 
@@ -60,17 +64,17 @@ impl Chunk {
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = String;
+    type Error = ChunkError;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self> {
         //length, type, data, crc
         if value.len() < 12 { //len, type, crc. data can be 0
-            return Err("length < 12".to_owned());
+            return Err(ChunkError::TooShort);
         }
         let data_length: u32 = u32::from_be_bytes((&value[0..4]).try_into().unwrap());
 
         if data_length > value.len() as u32 - 12 {
-            return Err(format!("length specified is too long for provided bytes: {} > {}", data_length, value.len()));
+            return Err(ChunkError::TooLong);
         }
 
         type Offsets = (usize, usize);
@@ -90,7 +94,7 @@ impl TryFrom<&[u8]> for Chunk {
         };
 
         if chunk.crc() != crc {
-            return Err("CRC mismatch".to_owned());
+            return Err(ChunkError::BadCRC);
         }
 
         Ok(chunk)

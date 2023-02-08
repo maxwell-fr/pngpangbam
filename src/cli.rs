@@ -1,4 +1,5 @@
-use clap::{Parser,Subcommand};
+use std::collections::HashMap;
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::chunk::Chunk;
@@ -34,10 +35,12 @@ pub enum PngCommand {
     }
 }
 
+type SuccessHash = HashMap<String, u32>;
 pub enum CliSuccess {
     Success,
     SuccessMsg(String),
     SuccessBytes(Vec<u8>),
+    SuccessHashMap(SuccessHash),
 }
 
 impl From<()> for CliSuccess {
@@ -92,12 +95,15 @@ impl Cli {
                     Ok(png.save(filename)?.into())
                 }
             }
-            PngCommand::Print { .. } => {
-                Err(PngError::GenericError)
+            PngCommand::Print { filename } => {
+                let png = Png::load(filename)?;
+                let mut hashmap = SuccessHash::new();
+                for chunk in png.chunks() {
+                    hashmap.entry(chunk.chunk_type().to_string()).and_modify(|ctr| *ctr += 1).or_insert(1);
+                }
+
+                Ok(CliSuccess::SuccessHashMap(hashmap))
             }
         }
-
-
-
     }
 }
