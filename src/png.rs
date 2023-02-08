@@ -2,6 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::path::Path;
 
 use crate::chunk::Chunk;
+use crate::chunk_type::ChunkType;
 use crate::png_error::PngError;
 
 pub struct Png {
@@ -22,28 +23,37 @@ impl Png {
     }
 
     pub fn append_chunk(&mut self, chunk: Chunk) {
-        self.my_chunks.push(chunk)
+        let mut idx = self.my_chunks.len();
+        if let Some(last) = self.my_chunks.last() {
+            if last.chunk_type() == &ChunkType::END_CHUNK {
+                idx -= 1;
+                if chunk.chunk_type() == &ChunkType::END_CHUNK {
+                    return;
+                }
+            }
+        }
+        self.my_chunks.insert(idx, chunk);
     }
 
-    pub fn remove_chunk(&mut self, chunk_type: &str) -> Result<Chunk> {
+    pub fn remove_chunk(&mut self, chunk_type: &ChunkType) -> Result<Chunk> {
         for (i, c) in self.my_chunks.iter().enumerate() {
-            if c.chunk_type().to_string() == chunk_type {
+            if c.chunk_type() == chunk_type {
                 return Ok(self.my_chunks.remove(i));
             }
         }
         Err(PngError::ChunkNotFound)
     }
 
-    fn header(&self) -> &[u8; 8] {
-        &self.header
-    }
+    // fn header(&self) -> &[u8; 8] {
+    //     &self.header
+    // }
 
     fn chunks(&self) -> &[Chunk] {
         self.my_chunks.as_slice()
     }
 
-    pub fn chunk_by_type(&self, chunk_type: &str) -> Option<&Chunk> {
-        self.my_chunks.iter().find(|&c| c.chunk_type().to_string() == chunk_type)
+    pub fn chunk_by_type(&self, chunk_type: &ChunkType) -> Option<&Chunk> {
+        self.my_chunks.iter().find(|&c| c.chunk_type() == chunk_type)
     }
 
     fn as_bytes(&self) -> Vec<u8> {
@@ -74,8 +84,7 @@ impl TryFrom<&[u8]> for Png {
         if value[0..8].iter()
             .zip(Png::STANDARD_HEADER)
             .map(|(a, b)| a.cmp(&b))
-            .find(|&o| o != std::cmp::Ordering::Equal)
-            != None  {
+            .any(|o| o != std::cmp::Ordering::Equal)  {
             return Err(PngError::BadHeader);
         }
 
@@ -90,14 +99,19 @@ impl TryFrom<&[u8]> for Png {
         let mut saw_idat = false;
         while let Ok(t_chunk) = Chunk::try_from(&value[idx..]) {
             idx += t_chunk.length() as usize + 12;
-            saw_ihdr = saw_ihdr || t_chunk.chunk_type() == "IHDR";
-            saw_iend = saw_iend || t_chunk.chunk_type() == "IEND";
-            saw_idat = saw_idat || t_chunk.chunk_type() == "IDAT";
+            let ct = &t_chunk.chunk_type().clone();
             new_png.append_chunk(t_chunk);
+
+            if ct == &ChunkType::END_CHUNK {
+                saw_iend = true;
+                break;
+            }
+            saw_ihdr = saw_ihdr || ct == "IHDR";
+            saw_idat = saw_idat || ct == "IDAT";
         };
 
         if saw_ihdr && saw_idat && saw_iend {
-             Ok(new_png) //todo: make this check work
+             Ok(new_png)
         }
         else {
             Err(PngError::MissingRequiredChunks)
@@ -225,27 +239,30 @@ mod tests {
     #[test]
     fn test_chunk_by_type() {
         let png = testing_png();
-        let chunk = png.chunk_by_type("FrSt").unwrap();
+        let ct = ChunkType::from_str("FrSt").unwrap();
+        let chunk = png.chunk_by_type(&ct).unwrap();
         assert_eq!(&chunk.chunk_type().to_string(), "FrSt");
-        assert_eq!(&chunk.data_as_string().unwrap(), "I am the first chunk");
+        assert_eq!(&chunk.as_string().unwrap(), "I am the first chunk");
 
     }
 
     #[test]
     fn test_append_chunk() {
         let mut png = testing_png();
+        let ct = ChunkType::from_str("TeSt").unwrap();
         png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
-        let chunk = png.chunk_by_type("TeSt").unwrap();
+        let chunk = png.chunk_by_type(&ct).unwrap();
         assert_eq!(&chunk.chunk_type().to_string(), "TeSt");
-        assert_eq!(&chunk.data_as_string().unwrap(), "Message");
+        assert_eq!(&chunk.as_string().unwrap(), "Message");
     }
 
     #[test]
     fn test_remove_chunk() {
         let mut png = testing_png();
+        let ct = ChunkType::from_str("TeSt").unwrap();
         png.append_chunk(chunk_from_strings("TeSt", "Message").unwrap());
-        png.remove_chunk("TeSt").unwrap();
-        let chunk = png.chunk_by_type("TeSt");
+        png.remove_chunk(&ct).unwrap();
+        let chunk = png.chunk_by_type(&ct);
         assert!(chunk.is_none());
     }
 

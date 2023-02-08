@@ -33,10 +33,10 @@ impl Chunk {
         &self.chunk_type
     }
 
-    pub fn data(&self) -> &[u8] {
-        let r: &[u8] = &self.data;
-        r
-    }
+    // pub fn data(&self) -> &[u8] {
+    //     let r: &[u8] = &self.data;
+    //     r
+    // }
 
     pub fn crc(&self) -> u32 {
         let chk = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
@@ -45,7 +45,7 @@ impl Chunk {
         chk.checksum(dh.by_ref())
     }
 
-    pub fn data_as_string(&self) -> Result<String, FromUtf8Error> {
+    pub fn as_string(&self) -> Result<String, FromUtf8Error> {
         String::from_utf8(self.data.clone())
     }
 
@@ -100,7 +100,7 @@ impl TryFrom<&[u8]> for Chunk {
 impl Display for Chunk {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "len: {}  type: {}  crc: {}  data: {}",
-               self.data_length, self.chunk_type, self.crc, self.data_as_string().expect("<non-msg data>"))
+               self.data_length, self.chunk_type, self.crc, self.as_string().expect("<non-msg data>"))
     }
 }
 
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_chunk_string() {
         let chunk = testing_chunk();
-        let chunk_string = chunk.data_as_string().unwrap();
+        let chunk_string = chunk.as_string().unwrap();
         let expected_chunk_string = String::from("This is where your secret message will be!");
         assert_eq!(chunk_string, expected_chunk_string);
     }
@@ -171,7 +171,7 @@ mod tests {
 
         let chunk = Chunk::try_from(chunk_data.as_ref()).unwrap();
 
-        let chunk_string = chunk.data_as_string().unwrap();
+        let chunk_string = chunk.as_string().unwrap();
         let expected_chunk_string = String::from("This is where your secret message will be!");
 
         assert_eq!(chunk.length(), 42);

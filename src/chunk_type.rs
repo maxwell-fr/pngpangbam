@@ -9,6 +9,8 @@ use std::str::FromStr;
 
 
 impl ChunkType {
+    pub const END_CHUNK: ChunkType = ChunkType {type_code: [0x49, 0x45, 0x4E, 0x44,]};
+
     pub fn bytes(&self) -> [u8; 4] {
         self.type_code
     }
@@ -102,10 +104,6 @@ impl Eq for ChunkType {}
 
 //picklenerd's tests below
 mod tests {
-    // use super::*;
-    // use std::convert::TryFrom;
-    // use std::str::FromStr;
-
     use std::str::FromStr;
     use crate::chunk_type::ChunkType;
 

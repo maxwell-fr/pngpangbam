@@ -34,3 +34,7 @@ impl From<()> for PngError {
         PngError::GenericError
     }
 }
+
+impl std::error::Error for PngError {
+
+}

@@ -27,42 +27,77 @@ pub enum PngCommand {
     Remove {
         filename: PathBuf,
         chunk_type: String,
+        out_filename: Option<PathBuf>,
     },
     Print {
         filename: PathBuf,
     }
 }
 
+pub enum CliSuccess {
+    Success,
+    SuccessMsg(String),
+    SuccessBytes(Vec<u8>),
+}
+
+impl From<()> for CliSuccess {
+    fn from(_: ()) -> Self {
+        CliSuccess::Success
+    }
+}
+
+
+
 impl Cli {
-    pub fn exec(&self) -> Result<(), PngError> {
+    pub fn exec(&self) -> Result<CliSuccess, PngError> {
         match &self.command {
             PngCommand::Encode {filename, chunk_type, message, out_filename} => {
                 let mut png = Png::load(filename)?;
                 let ct = ChunkType::from_str(chunk_type)?;
                 let new_chunk = Chunk::new(&ct, message.as_bytes().to_vec());
-                let _ = png.remove_chunk(&ct.to_string()); //try to remove the chunk if it exists; ignore error if it doesn't
+                let _ = png.remove_chunk(&ct); //try to remove the chunk if it exists; ignore error if it doesn't
                 png.append_chunk(new_chunk);
 
                 if let Some(out) = out_filename {
-                    png.save(out)?;
+                    Ok(png.save(out)?.into())
                 }
                 else {
-                    png.save(filename)?;
+                    Ok(png.save(filename)?.into())
                 }
             }
             PngCommand::Decode {filename, chunk_type } => {
                 let png = Png::load(filename)?;
                 let ct = ChunkType::from_str(chunk_type)?;
 
-                match png.chunk_by_type(&ct.to_string()) {
-                    None => { println!("Not found!") }
-                    Some(chunk) => { println!("Found {}: {}", chunk.chunk_type(), chunk.data_as_string().unwrap_or("could not convert to String".to_string()))}
+                match png.chunk_by_type(&ct) {
+                    None => { Err(PngError::ChunkNotFound) }
+                    Some(chunk) => {
+                        if let Ok(cs) = chunk.as_string() {
+                            Ok(CliSuccess::SuccessMsg(cs))
+                        }
+                        else {
+                            Ok(CliSuccess::SuccessBytes(chunk.as_bytes()))
+                        }
+                    }
                 }
             }
-            PngCommand::Remove { .. } => {}
-            PngCommand::Print { .. } => {}
+            PngCommand::Remove { filename, chunk_type, out_filename } => {
+                let mut png = Png::load(filename)?;
+                let ct = ChunkType::from_str(chunk_type)?;
+                png.remove_chunk(&ct)?;
+                if let Some(out) = out_filename {
+                    Ok(png.save(out)?.into())
+                }
+                else {
+                    Ok(png.save(filename)?.into())
+                }
+            }
+            PngCommand::Print { .. } => {
+                Err(PngError::GenericError)
+            }
         }
 
-        Ok(())
+
+
     }
 }
