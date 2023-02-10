@@ -21,10 +21,10 @@ pub struct Png {
 type Result<T> = std::result::Result<T, PngError>;
 
 impl Png {
-    /// The header found at the start of each PNG file
+    /// The header found at the start of each PNG file.
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    /// Combine a vector of chunks with the header
+    /// Combine a vector of chunks with the header.
     fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
@@ -63,17 +63,17 @@ impl Png {
     //     &self.header
     // }
 
-    /// Return the set of chunks that make up the PNG
+    /// Return the set of chunks that make up the PNG.
     pub(crate) fn chunks(&self) -> &[Chunk] {
         self.my_chunks.as_slice()
     }
 
-    /// Find a chunk by type
+    /// Find a chunk by type.
     pub fn chunk_by_type(&self, chunk_type: &ChunkType) -> Option<&Chunk> {
         self.my_chunks.iter().find(|&c| c.chunk_type() == chunk_type)
     }
 
-    /// Return the PNG file represented as a vector of bytes
+    /// Return the PNG file represented as a vector of bytes.
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = self.header.to_vec();
 
@@ -82,14 +82,14 @@ impl Png {
         bytes
     }
 
-    /// Load a PNG from file
+    /// Load a PNG from file.
     pub fn load(filepath: impl AsRef<Path>) -> Result<Png> {
         let file_bytes = std::fs::read(filepath)?;
 
         Png::try_from(file_bytes.as_slice())
     }
 
-    /// Write the current PNG to a file
+    /// Write the current PNG to a file.
     pub fn save(&self, filepath: impl AsRef<Path>) -> Result<()> {
         std::fs::write(filepath, self.as_bytes())?;
         Ok(())

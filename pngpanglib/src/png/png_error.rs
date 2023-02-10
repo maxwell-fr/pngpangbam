@@ -1,18 +1,23 @@
 //! This is an implementation of PNG specific errors.
-//!
 
 use std::fmt::{Debug, Formatter};
 
 use crate::chunk::ChunkError;
 
-//type Result<T> = std::result::Result<T, PngError>;
+/// Implements specific errors handled by the PNG object
 #[derive(Debug)]
 pub enum PngError {
+    /// Bad or missing magic bytes.
     BadHeader,
+    /// Non-optional chunks are missing (see <http://www.libpng.org/pub/png/spec/1.2/>).
     MissingRequiredChunks,
+    /// Chunk sought by caller was not found.
     ChunkNotFound,
+    /// Other unspecified error.
     GenericError,
+    /// IO-specific error wrapper.
     IO(std::io::Error),
+    /// Chunk-specific error wrapper.
     ChunkError(ChunkError),
 }
 
