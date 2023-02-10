@@ -10,6 +10,7 @@ use crate::png::{Png, PngError};
 
 /// Contains the command logic and Clap parser handler.
 #[derive(Parser)]
+#[command(author, version, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
     command: PngCommand,
@@ -18,22 +19,36 @@ pub struct Cli {
 /// Supported commands and their arguments
 #[derive(Subcommand, Debug)]
 pub enum PngCommand {
+    /// Encode a message with the given chunk type.
     Encode {
+        /// Path to source PNG file.
         filename: PathBuf,
+        /// Chunk type code. See PNG spec at <http://www.libpng.org/pub/png/spec/1.2/> for details.
         chunk_type: String,
+        /// Message to encode.
         message: String,
+        /// Output file if different from source.
         out_filename: Option<PathBuf>,
     },
+    /// Decode a message with the given chunk type.
     Decode {
+        /// Path to source PNG file.
         filename: PathBuf,
+        /// Chunk type code. See PNG spec at <http://www.libpng.org/pub/png/spec/1.2/> for details.
         chunk_type: String,
     },
+    /// Remove the message with the given chunk type.
     Remove {
+        /// Path to source PNG file.
         filename: PathBuf,
+        /// Chunk type code. See PNG spec at <http://www.libpng.org/pub/png/spec/1.2/> for details.
         chunk_type: String,
+        /// Output file if different from source.
         out_filename: Option<PathBuf>,
     },
+    /// Generate a list of chunk types and their counts.
     Print {
+        /// Path to source PNG file.
         filename: PathBuf,
     }
 }
