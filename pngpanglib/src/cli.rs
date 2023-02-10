@@ -1,3 +1,5 @@
+//! Module to handle normal commands, usually from a command-line interface.
+
 use std::collections::HashMap;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -6,12 +8,14 @@ use crate::chunk::Chunk;
 use crate::chunk::ChunkType;
 use crate::png::{Png, PngError};
 
+/// Contains the command logic and Clap parser handler.
 #[derive(Parser)]
 pub struct Cli {
     #[command(subcommand)]
     command: PngCommand,
 }
 
+/// Supported commands and their arguments
 #[derive(Subcommand, Debug)]
 pub enum PngCommand {
     Encode {
@@ -35,10 +39,16 @@ pub enum PngCommand {
 }
 
 type SuccessHash = HashMap<String, u32>;
+
+/// Possible successful outcomes.
 pub enum CliSuccess {
+    /// Simple all-good.
     Success,
+    /// Success with a String result.
     SuccessMsg(String),
+    /// Success with a byte vector result.
     SuccessBytes(Vec<u8>),
+    /// Success with a key-value hashmap output.
     SuccessHashMap(SuccessHash),
 }
 
@@ -51,9 +61,12 @@ impl From<()> for CliSuccess {
 
 
 impl Cli {
+    /// Initialize this object with Clap::Parser
     pub fn init() -> Cli {
         Cli::parse()
     }
+
+    /// Execute the command contained in this object and return the outcome.
     pub fn exec(&self) -> Result<CliSuccess, PngError> {
         match &self.command {
             PngCommand::Encode {filename, chunk_type, message, out_filename} => {
@@ -63,12 +76,11 @@ impl Cli {
                 let _ = png.remove_chunk(&ct); //try to remove the chunk if it exists; ignore error if it doesn't
                 png.append_chunk(new_chunk);
 
-                if let Some(out) = out_filename {
-                    Ok(png.save(out)?.into())
-                }
-                else {
-                    Ok(png.save(filename)?.into())
-                }
+                let out_f = match out_filename {
+                    None => filename,
+                    Some(out) => out,
+                };
+                Ok(png.save(out_f)?.into())
             }
             PngCommand::Decode {filename, chunk_type } => {
                 let png = Png::load(filename)?;
@@ -90,12 +102,12 @@ impl Cli {
                 let mut png = Png::load(filename)?;
                 let ct = ChunkType::from_str(chunk_type)?;
                 png.remove_chunk(&ct)?;
-                if let Some(out) = out_filename {
-                    Ok(png.save(out)?.into())
-                }
-                else {
-                    Ok(png.save(filename)?.into())
-                }
+
+                let out_f = match out_filename {
+                    None => filename,
+                    Some(out) => out,
+                };
+                Ok(png.save(out_f)?.into())
             }
             PngCommand::Print { filename } => {
                 let png = Png::load(filename)?;

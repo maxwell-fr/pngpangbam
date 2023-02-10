@@ -13,29 +13,35 @@ use std::str::FromStr;
 
 
 impl ChunkType {
-    /// The type code for an end chunk
+    /// The type code for an end chunk.
     pub const END_CHUNK: ChunkType = ChunkType {type_code: [0x49, 0x45, 0x4E, 0x44,]};
 
+    /// Get the type code as a byte slice.
     pub fn bytes(&self) -> [u8; 4] {
         self.type_code
     }
 
+    /// Test if the type code is valid.
     pub fn is_valid(&self) -> bool {
         self.type_code[2] & 0b100000 == 0
     }
 
+    /// Test if the type code is flagged critical.
     pub fn is_critical(&self) -> bool {
         self.type_code[0] & 0b100000 == 0
     }
 
+    /// Test if the type code is flagged public.
     pub fn is_public(&self) -> bool {
         self.type_code[1] & 0b100000 == 0
     }
 
+    /// Test if the reserved bit is set properly.
     pub fn is_reserved_bit_valid(&self) -> bool {
         self.type_code[2] & 0b100000 == 0
     }
 
+    /// Test if the safe-to-copy bit is set.
     pub fn is_safe_to_copy(&self) -> bool {
         self.type_code[3] & 0b100000 != 0
     }

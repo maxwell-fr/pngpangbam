@@ -4,7 +4,7 @@ use std::fmt::{Debug, Formatter};
 
 use crate::chunk::ChunkError;
 
-/// Implements specific errors handled by the PNG object
+/// Implements specific errors emitted by the PNG object.
 #[derive(Debug)]
 pub enum PngError {
     /// Bad or missing magic bytes.

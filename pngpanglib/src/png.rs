@@ -3,13 +3,13 @@
 //! Contains structure and methods to handle the parts of a PNG file touched by the PNGme specification.
 //!
 
-pub mod png_error;
+pub(crate) mod png_error;
 
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 
 use crate::chunk::Chunk;
-use crate::chunk::chunk_type::ChunkType;
+use crate::chunk::ChunkType;
 pub use crate::png::png_error::PngError;
 
 /// The fundamental structure of a PNG file is a header followed by chunks.
@@ -25,7 +25,8 @@ impl Png {
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
     /// Combine a vector of chunks with the header.
-    fn from_chunks(chunks: Vec<Chunk>) -> Png {
+    /// Does not validate chunks
+    pub fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
             my_chunks: chunks

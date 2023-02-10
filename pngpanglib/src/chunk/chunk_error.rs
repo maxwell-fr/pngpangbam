@@ -1,11 +1,17 @@
+//! This is an implementation of PNG chunk specific errors.
+
 use std::fmt::{Debug, Formatter};
 
-//type Result<T> = std::result::Result<T, ChunkError>;
+/// Implements specific errors emitted by the Chunk object.
 #[derive(Debug)]
 pub enum ChunkError {
+    /// Chunk CRC does not match.
     BadCRC,
+    /// Chunk length is shorter than the shortest possible chunk.
     TooShort,
+    /// Chunk length value is longer than the actual data
     TooLong,
+    /// Unspecified chunk error
     GenericError,
 }
 

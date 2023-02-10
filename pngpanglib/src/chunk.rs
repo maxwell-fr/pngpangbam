@@ -3,19 +3,20 @@
 //! The chunk is the building block of a PNG data structure and has certain qualities
 //! that make it valid or invalid.
 
-pub mod chunk_type;
-pub mod chunk_error;
+mod chunk_type;
+mod chunk_error;
 
 use std::fmt::{Display, Formatter};
 use std::io::Write;
 use std::string::FromUtf8Error;
 use crc::Crc;
 
-pub use crate::chunk::chunk_error::ChunkError;
-pub use crate::chunk::chunk_type::ChunkType;
+pub use chunk_error::ChunkError;
+pub use chunk_type::ChunkType;
 
 type Result<T> = std::result::Result<T, ChunkError>;
 
+/// Each chunk is a structured component of a PNG file.
 pub struct Chunk {
     data_length: u32,
     chunk_type: ChunkType,
@@ -24,7 +25,7 @@ pub struct Chunk {
 }
 
 impl Chunk {
-
+    /// Create a new chunk with the provided data.
     pub fn new(chunk_type: &ChunkType, data: Vec<u8>) -> Chunk {
         let mut no_crc_chunk = Chunk {
             data_length: data.len() as u32,
@@ -37,10 +38,12 @@ impl Chunk {
         no_crc_chunk
     }
 
+    /// Get the length of the data in the chunk.
     pub fn length(&self) -> u32 {
         self.data_length
     }
 
+    /// Get the chunk type.
     pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
@@ -50,17 +53,20 @@ impl Chunk {
     //     r
     // }
 
-    pub fn crc(&self) -> u32 {
+    /// Compute CRC of data and header.
+    fn crc(&self) -> u32 {
         let chk = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
         let mut dh: Vec<u8> = self.chunk_type.bytes().to_vec();
-        dh.append(&mut self.data.clone()); //todo: doable without clone?
+        dh.append(&mut self.data.clone());
         chk.checksum(dh.by_ref())
     }
 
+    /// Return the data as String, if possible.
     pub fn as_string(&self) -> std::result::Result<String, FromUtf8Error> {
         String::from_utf8(self.data.clone())
     }
 
+    /// Return a copy of the data as a byte vector.
     pub fn as_bytes(&self) -> Vec<u8> {
         let mut byt: Vec<u8> = self.data_length.to_be_bytes().to_vec();
         byt.append(&mut self.chunk_type.bytes().to_vec());
