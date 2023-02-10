@@ -1,3 +1,7 @@
+//! Implements the type code field of a PNG chunk.
+//!
+
+/// Implements the type code field and utility methods.
 #[derive(Debug, Clone)]
 pub struct ChunkType {
     type_code: [u8; 4],
@@ -9,6 +13,7 @@ use std::str::FromStr;
 
 
 impl ChunkType {
+    /// The type code for an end chunk
     pub const END_CHUNK: ChunkType = ChunkType {type_code: [0x49, 0x45, 0x4E, 0x44,]};
 
     pub fn bytes(&self) -> [u8; 4] {
@@ -19,19 +24,19 @@ impl ChunkType {
         self.type_code[2] & 0b100000 == 0
     }
 
-    fn is_critical(&self) -> bool {
+    pub fn is_critical(&self) -> bool {
         self.type_code[0] & 0b100000 == 0
     }
 
-    fn is_public(&self) -> bool {
+    pub fn is_public(&self) -> bool {
         self.type_code[1] & 0b100000 == 0
     }
 
-    fn is_reserved_bit_valid(&self) -> bool {
+    pub fn is_reserved_bit_valid(&self) -> bool {
         self.type_code[2] & 0b100000 == 0
     }
 
-    fn is_safe_to_copy(&self) -> bool {
+    pub fn is_safe_to_copy(&self) -> bool {
         self.type_code[3] & 0b100000 != 0
     }
 }
@@ -52,7 +57,7 @@ impl FromStr for ChunkType {
         }
         else {
             for &b in bytes {
-                if !((b >= 65 && b <= 90) || (b >= 97 && b <= 122)) {
+                if !((65..=90).contains(&b) || (97..=122).contains(&b)) {
                     return Err(());
                 }
             }
@@ -70,10 +75,6 @@ impl PartialEq<str> for ChunkType {
             self.type_code[2] == other_bytes[2] &&
             self.type_code[3] == other_bytes[3]
     }
-
-    fn ne(&self, other: &str) -> bool {
-        !(self == other)
-    }
 }
 
 impl Display for ChunkType {
@@ -90,23 +91,14 @@ impl PartialEq for ChunkType {
             self.type_code[2] == other.type_code[2] &&
             self.type_code[3] == other.type_code[3]
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        self.type_code[0] != other.type_code[0] ||
-            self.type_code[1] != other.type_code[1] ||
-            self.type_code[2] != other.type_code[2] ||
-            self.type_code[3] != other.type_code[3]
-    }
 }
 
-impl Eq for ChunkType {}
 
 
-//picklenerd's tests below
+/// These tests use those provided by picklenerd <https://picklenerd.github.io/pngme_book/> as a foundation.
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-    use crate::chunk::ChunkType;
+    use super::*;
 
     #[test]
     pub fn test_chunk_type_from_bytes() {

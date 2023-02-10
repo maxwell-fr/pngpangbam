@@ -1,5 +1,7 @@
+//! This is an implementation of PNG specific errors.
+//!
+
 use std::fmt::{Debug, Formatter};
-use std::io::Error;
 
 use crate::chunk::ChunkError;
 
@@ -28,7 +30,7 @@ impl std::fmt::Display for PngError {
 }
 
 impl From<std::io::Error> for PngError {
-    fn from(value: Error) -> Self {
+    fn from(value: std::io::Error) -> Self {
         PngError::IO(value)
     }
 }

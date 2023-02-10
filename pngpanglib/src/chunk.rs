@@ -1,3 +1,8 @@
+//! Describes and implements a PNG chunk.
+//!
+//! The chunk is the building block of a PNG data structure and has certain qualities
+//! that make it valid or invalid.
+
 pub mod chunk_type;
 pub mod chunk_error;
 
@@ -111,16 +116,21 @@ impl Display for Chunk {
     }
 }
 
-//picklenerd's tests below
+/// These tests use those provided by picklenerd <https://picklenerd.github.io/pngme_book/> as a foundation.
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn testing_chunk() -> Chunk {
+    fn testing_bytes(good: bool) -> Vec<u8> {
         let data_length: u32 = 42;
         let chunk_type = "RuSt".as_bytes();
         let message_bytes = "This is where your secret message will be!".as_bytes();
-        let crc: u32 = 2882656334;
+        let crc: u32 = if good {
+            2882656334
+        }
+        else {
+            2882656333
+        };
 
         let chunk_data: Vec<u8> = data_length
             .to_be_bytes()
@@ -131,7 +141,11 @@ mod tests {
             .copied()
             .collect();
 
-        Chunk::try_from(chunk_data.as_ref()).unwrap()
+        chunk_data
+    }
+
+    fn testing_chunk() -> Chunk {
+        Chunk::try_from(testing_bytes(true).as_ref()).unwrap()
     }
 
     #[test]
@@ -162,21 +176,7 @@ mod tests {
 
     #[test]
     fn test_valid_chunk_from_bytes() {
-        let data_length: u32 = 42;
-        let chunk_type = "RuSt".as_bytes();
-        let message_bytes = "This is where your secret message will be!".as_bytes();
-        let crc: u32 = 2882656334;
-
-        let chunk_data: Vec<u8> = data_length
-            .to_be_bytes()
-            .iter()
-            .chain(chunk_type.iter())
-            .chain(message_bytes.iter())
-            .chain(crc.to_be_bytes().iter())
-            .copied()
-            .collect();
-
-        let chunk = Chunk::try_from(chunk_data.as_ref()).unwrap();
+        let chunk = Chunk::try_from(testing_bytes(true).as_ref()).unwrap();
 
         let chunk_string = chunk.as_string().unwrap();
         let expected_chunk_string = String::from("This is where your secret message will be!");
@@ -189,44 +189,16 @@ mod tests {
 
     #[test]
     fn test_invalid_chunk_from_bytes() {
-        let data_length: u32 = 42;
-        let chunk_type = "RuSt".as_bytes();
-        let message_bytes = "This is where your secret message will be!".as_bytes();
-        let crc: u32 = 2882656333;
-
-        let chunk_data: Vec<u8> = data_length
-            .to_be_bytes()
-            .iter()
-            .chain(chunk_type.iter())
-            .chain(message_bytes.iter())
-            .chain(crc.to_be_bytes().iter())
-            .copied()
-            .collect();
-
-        let chunk = Chunk::try_from(chunk_data.as_ref());
+        let chunk = Chunk::try_from(testing_bytes(false).as_ref());
 
         assert!(chunk.is_err());
     }
 
     #[test]
     pub fn test_chunk_trait_impls() {
-        let data_length: u32 = 42;
-        let chunk_type = "RuSt".as_bytes();
-        let message_bytes = "This is where your secret message will be!".as_bytes();
-        let crc: u32 = 2882656334;
+        let chunk: Chunk = Chunk::try_from(testing_bytes(true).as_ref()).unwrap();
 
-        let chunk_data: Vec<u8> = data_length
-            .to_be_bytes()
-            .iter()
-            .chain(chunk_type.iter())
-            .chain(message_bytes.iter())
-            .chain(crc.to_be_bytes().iter())
-            .copied()
-            .collect();
-
-        let chunk: Chunk = TryFrom::try_from(chunk_data.as_ref()).unwrap();
-
-        let _chunk_string = format!("{}", chunk);
+        let _chunk_string = format!("{chunk}");
     }
 }
 

@@ -1,3 +1,8 @@
+//! An implementation of the PNG file format.
+//!
+//! Contains structure and methods to handle the parts of a PNG file touched by the PNGme specification.
+//!
+
 pub mod png_error;
 
 use std::fmt::{Display, Formatter};
@@ -7,7 +12,7 @@ use crate::chunk::Chunk;
 use crate::chunk::chunk_type::ChunkType;
 pub use crate::png::png_error::PngError;
 
-
+/// The fundamental structure of a PNG file is a header followed by chunks.
 pub struct Png {
     header: [u8; 8],
     my_chunks: Vec<Chunk>,
@@ -16,8 +21,10 @@ pub struct Png {
 type Result<T> = std::result::Result<T, PngError>;
 
 impl Png {
+    /// The header found at the start of each PNG file
     pub const STANDARD_HEADER: [u8; 8] = [137, 80, 78, 71, 13, 10, 26, 10];
 
+    /// Combine a vector of chunks with the header
     fn from_chunks(chunks: Vec<Chunk>) -> Png {
         Png {
             header: Png::STANDARD_HEADER,
@@ -25,6 +32,9 @@ impl Png {
         }
     }
 
+    /// Append a chunk.
+    /// Inserts a chunk before the end chunk, unless the chunk type is an end type. In this case,
+    /// the chunk is placed at the end or ignored if already present.
     pub fn append_chunk(&mut self, chunk: Chunk) {
         let mut idx = self.my_chunks.len();
         if let Some(last) = self.my_chunks.last() {
@@ -38,6 +48,8 @@ impl Png {
         self.my_chunks.insert(idx, chunk);
     }
 
+    /// Remove a chunk.
+    /// Removes and returns the first chunk of the specified type found.
     pub fn remove_chunk(&mut self, chunk_type: &ChunkType) -> Result<Chunk> {
         for (i, c) in self.my_chunks.iter().enumerate() {
             if c.chunk_type() == chunk_type {
@@ -51,28 +63,33 @@ impl Png {
     //     &self.header
     // }
 
-    pub fn chunks(&self) -> &[Chunk] {
+    /// Return the set of chunks that make up the PNG
+    pub(crate) fn chunks(&self) -> &[Chunk] {
         self.my_chunks.as_slice()
     }
 
+    /// Find a chunk by type
     pub fn chunk_by_type(&self, chunk_type: &ChunkType) -> Option<&Chunk> {
         self.my_chunks.iter().find(|&c| c.chunk_type() == chunk_type)
     }
 
+    /// Return the PNG file represented as a vector of bytes
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes: Vec<u8> = self.header.to_vec();
 
-        self.my_chunks.iter().for_each(|c| bytes.append(&mut c.as_bytes().clone()));
+        self.my_chunks.iter().for_each(|c| bytes.append(&mut c.as_bytes()));
 
         bytes
     }
 
+    /// Load a PNG from file
     pub fn load(filepath: impl AsRef<Path>) -> Result<Png> {
         let file_bytes = std::fs::read(filepath)?;
 
         Png::try_from(file_bytes.as_slice())
     }
 
+    /// Write the current PNG to a file
     pub fn save(&self, filepath: impl AsRef<Path>) -> Result<()> {
         std::fs::write(filepath, self.as_bytes())?;
         Ok(())
@@ -98,7 +115,6 @@ impl TryFrom<&[u8]> for Png {
 
         let mut idx: usize = 8;
         let mut saw_ihdr = false;
-        let mut saw_iend = false;
         let mut saw_idat = false;
         loop {
             let maybe_chunk = Chunk::try_from(&value[idx..]);
@@ -109,7 +125,6 @@ impl TryFrom<&[u8]> for Png {
                     new_png.append_chunk(t_chunk);
 
                     if ct == &ChunkType::END_CHUNK {
-                        saw_iend = true;
                         break;
                     }
                     saw_ihdr = saw_ihdr || ct == "IHDR";
@@ -121,7 +136,8 @@ impl TryFrom<&[u8]> for Png {
             }
         };
 
-        if saw_ihdr && saw_idat && saw_iend {
+        //An end chunk having been seen is implied; either we saw an end chunk and got here, or bailed on an error
+        if saw_ihdr && saw_idat  {
              Ok(new_png)
         }
         else {
@@ -137,24 +153,21 @@ impl Display for Png {
 }
 
 
-//picklenerd's tests below
+/// These tests use those provided by picklenerd <https://picklenerd.github.io/pngme_book/> as a foundation.
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk::ChunkType;
-    use crate::chunk::Chunk;
     use std::str::FromStr;
-    use std::convert::TryFrom;
 
     fn testing_chunks() -> Vec<Chunk> {
-        let mut chunks = Vec::new();
-
-        chunks.push(chunk_from_strings("IHDR", "0").unwrap()); //fixme: this IHDR is not valid
-        chunks.push(chunk_from_strings("IDAT", "0").unwrap());
-        chunks.push(chunk_from_strings("FrSt", "I am the first chunk").unwrap());
-        chunks.push(chunk_from_strings("miDl", "I am another chunk").unwrap());
-        chunks.push(chunk_from_strings("LASt", "I am the last chunk").unwrap());
-        chunks.push(chunk_from_strings("IEND", "").unwrap());
+        let chunks = vec![
+            chunk_from_strings("IHDR", "0").unwrap(), //fixme: this IHDR is not valid
+            chunk_from_strings("IDAT", "0").unwrap(),
+            chunk_from_strings("FrSt", "I am the first chunk").unwrap(),
+            chunk_from_strings("miDl", "I am another chunk").unwrap(),
+            chunk_from_strings("LASt", "I am the last chunk").unwrap(),
+            chunk_from_strings("IEND", "").unwrap(),
+            ];
 
         chunks
     }
@@ -287,7 +300,7 @@ mod tests {
     fn test_as_bytes() {
         let png = Png::try_from(&PNG_FILE[..]).unwrap();
         let actual = png.as_bytes();
-        let expected: Vec<u8> = PNG_FILE.iter().copied().collect();
+        let expected: Vec<u8> = PNG_FILE.to_vec();
         assert_eq!(actual, expected);
     }
 
@@ -305,8 +318,7 @@ mod tests {
             .collect();
 
         let png: Png = TryFrom::try_from(bytes.as_ref()).unwrap();
-
-        let _png_string = format!("{}", png);
+        let _png_string = format!("{png}");
     }
 
     // This is the raw bytes for a shrunken version of the `dice.png` image on Wikipedia
