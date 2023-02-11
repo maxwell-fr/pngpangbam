@@ -1,23 +1,18 @@
 //! Module to handle normal commands, usually from a command-line interface.
 
 use std::collections::HashMap;
-use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::str::FromStr;
 use crate::chunk::Chunk;
 use crate::chunk::ChunkType;
 use crate::png::{Png, PngError};
 
-/// Contains the command logic and Clap parser handler.
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-pub struct Cli {
-    #[command(subcommand)]
-    command: PngCommand,
-}
+#[cfg(feature="clap")]
+use clap::Subcommand;
 
+#[cfg_attr(feature="clap", derive(Subcommand))]
 /// Supported commands and their arguments
-#[derive(Subcommand, Debug)]
+#[derive(Debug)]
 pub enum PngCommand {
     /// Encode a message with the given chunk type.
     Encode {
@@ -53,10 +48,11 @@ pub enum PngCommand {
     }
 }
 
-type SuccessHash = HashMap<String, u32>;
+/// Hashmap definition for SuccessHashMap
+pub type PngCmdSuccessHash = HashMap<String, u32>;
 
 /// Possible successful outcomes.
-pub enum CliSuccess {
+pub enum PngCmdSuccess {
     /// Simple all-good.
     Success,
     /// Success with a String result.
@@ -64,26 +60,21 @@ pub enum CliSuccess {
     /// Success with a byte vector result.
     SuccessBytes(Vec<u8>),
     /// Success with a key-value hashmap output.
-    SuccessHashMap(SuccessHash),
+    SuccessHashMap(PngCmdSuccessHash),
 }
 
-impl From<()> for CliSuccess {
+impl From<()> for PngCmdSuccess {
     fn from(_: ()) -> Self {
-        CliSuccess::Success
+        PngCmdSuccess::Success
     }
 }
 
 
 
-impl Cli {
-    /// Initialize this object with Clap::Parser
-    pub fn init() -> Cli {
-        Cli::parse()
-    }
-
-    /// Execute the command contained in this object and return the outcome.
-    pub fn exec(&self) -> Result<CliSuccess, PngError> {
-        match &self.command {
+impl PngCommand {
+    /// Execute the command contained and return the outcome.
+    pub fn exec(command: &PngCommand) -> Result<PngCmdSuccess, PngError> {
+        match command {
             PngCommand::Encode {filename, chunk_type, message, out_filename} => {
                 let mut png = Png::load(filename)?;
                 let ct = ChunkType::from_str(chunk_type)?;
@@ -105,10 +96,10 @@ impl Cli {
                     None => { Err(PngError::ChunkNotFound) }
                     Some(chunk) => {
                         if let Ok(cs) = chunk.as_string() {
-                            Ok(CliSuccess::SuccessMsg(cs))
+                            Ok(PngCmdSuccess::SuccessMsg(cs))
                         }
                         else {
-                            Ok(CliSuccess::SuccessBytes(chunk.as_bytes()))
+                            Ok(PngCmdSuccess::SuccessBytes(chunk.as_bytes()))
                         }
                     }
                 }
@@ -126,12 +117,12 @@ impl Cli {
             }
             PngCommand::Print { filename } => {
                 let png = Png::load(filename)?;
-                let mut hashmap = SuccessHash::new();
+                let mut hashmap = PngCmdSuccessHash::new();
                 for chunk in png.chunks() {
                     hashmap.entry(chunk.chunk_type().to_string()).and_modify(|ctr| *ctr += 1).or_insert(1);
                 }
 
-                Ok(CliSuccess::SuccessHashMap(hashmap))
+                Ok(PngCmdSuccess::SuccessHashMap(hashmap))
             }
         }
     }

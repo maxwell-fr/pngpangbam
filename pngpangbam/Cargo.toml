@@ -1,9 +1,13 @@
 [package]
 name = "pngpangbam"
-version = "0.1.0"
-edition = "2021"
+description = "A command line interface for the PNGPANGBAM implementation of PNGme."
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pngpanglib = {path = "../pngpanglib"}
+pngpanglib = {path = "../pngpanglib", features = ["clap"]}
+clap = { workspace = true, features = ["derive"] }
+

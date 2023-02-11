@@ -9,4 +9,4 @@
 
 pub mod chunk;
 pub mod png;
-pub mod cli;
+pub mod png_command;

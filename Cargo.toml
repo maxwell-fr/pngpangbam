@@ -1,2 +1,11 @@
 [workspace]
 members = [ "pngpangbam", "pngpanglib" ]
+
+[workspace.dependencies]
+clap = { version = "4.1.4", features = ["derive"] }
+
+[workspace.package]
+description = "An implementation of the PNGme project."
+authors = [ "Maxwell <maxwell@frenchnet.org>"]
+version = "0.2.0"
+edition = "2021"
